@@ -95,8 +95,8 @@ $2$ つの子はそれぞれ\textbf{左の子}、\textbf{右の子}と呼ばれ�
 
 二分探索木は、頂点数を $N$ とおくと、深さが最大で $\Theta(N)$ になる。
 二分探索木の条件を保ったまま、深さを小さく維持しようとするのが\textbf{平衡二分探索木}である。
-\code{std::set} は平衡二分探索木を用いて実装されている。
 
+\code{std::set} は平衡二分探索木を用いて実装されている。
 \code{std::set} の最悪時間計算量は、集合の要素数を $N$ として $\Theta(\log N)$ である。
 また、空間計算量は $\Theta(N)$ である。
 
@@ -104,7 +104,10 @@ $2$ つの子はそれぞれ\textbf{左の子}、\textbf{右の子}と呼ばれ�
 
 \subsection{vEB tree の構造}
 
-簡単のため $U = 2^K$ とする。
+簡単のため、普遍集合サイズ $U$ がある非負整数 $K$ に対し $U = 2^K$ と表されると仮定する。
+$U$ がこのように表されない場合についても、普遍集合サイズを $U' = 2^{\lceil \log_2 U \rceil}$ で置き換えれば、
+$U \leq U' \leq 2U$ より計算量には影響しない。
+
 $K \leq 1$ すなわち $U \leq 2$ のときは、長さ $U$ の配列を用いて、$x = 0, \dots, U - 1$ それぞれについて $x \in S$ かどうかを管理しておくことにより、全ての操作を $O(1)$ の計算量で行うことができる。
 以降は $K \geq 2$ とする。
 
@@ -114,30 +117,156 @@ U_{\mathrm{high}} = 2^{\left\lceil \frac{K}{2} \right\rceil}$ とおく。
 $\mathrm{vEB}(U)$ は以下の情報から構成される。
 
 \begin{itemize}
-  \item $\mathrm{min}$ : $S$ の最小値（存在しない場合は $\mathrm{NIL}$）
-  \item $\mathrm{max}$ : $S$ の最大値（存在しない場合は $\mathrm{NIL}$）
+  \item $\min$ : $S$ の最小値（存在しない場合は $\mathrm{NIL}$）
+  \item $\max$ : $S$ の最大値（存在しない場合は $\mathrm{NIL}$）
   \item $\mathrm{cluster}$ : $U_{\mathrm{high}}$ 個の $\mathrm{vEB}(U_{\mathrm{low}})$ を指すポインタ
   \item $\mathrm{summary}$ : $\mathrm{cluster}$ の情報をまとめた $\mathrm{vEB}(U_{\mathrm{high}})$
 \end{itemize}
 
+「何もない」ことを表すための値として、$\mathrm{NIL}$ を導入した。
+$a = \mathrm{NIL}$ かつ $b \neq \mathrm{NIL}$ ならば、$a = b, a < b, a > b$ のいずれも偽であるとする。
+
 以下、$i = 0, \dots, U_{\mathrm{high}} - 1$ に対し、$\mathrm{cluster}_i$ で $i + 1$ 番目のポインタが指す $\mathrm{vEB}(U_{\mathrm{low}})$ を表すことにする。
 また、$x \in \{0, \dots, U - 1\}$ に対し、$x$ を $U_{\mathrm{low}}$ で割った商を $\mathrm{high}(x)$、余りを $\mathrm{low}(x)$ とおく。
 
-$\mathrm{cluster}_0, \dots, \mathrm{cluster}_{U_{\mathrm{high}} - 1}$ は $S \setminus \{\mathrm{min}\}$ の要素を管理する。
-$x \in S \setminus \{\mathrm{min}\}$ は、$\mathrm{cluster}_{\mathrm{high}(x)}$ 内に $\mathrm{low}(x)$ として管理する。
-
-$\mathrm{summary}$ は $i \in \{0, \dots, U_{\mathrm{high}} - 1\}$ かつ $\mathrm{cluster}_i$ が管理する集合が空でないような $i$ の集合を管理する vEB tree である。
+$\mathrm{cluster}_0, \dots, \mathrm{cluster}_{U_{\mathrm{high}} - 1}$ は $S \setminus \{\min\}$ の要素を管理する。
+$x \in S \setminus \{\min\}$ は、$\mathrm{cluster}_{\mathrm{high}(x)}$ 内に $\mathrm{low}(x)$ として管理する。
+$\mathrm{summary}$ は $i \in \{0, \dots, U_{\mathrm{high}} - 1\}$ かつ $\mathrm{cluster}_i$ が管理する集合が空でないような $i$ の集合を管理する。
 
 \subsection{各種操作の実現}
 
+前節で述べた通り、$K \leq 1$ の場合は全ての操作を $O(1)$ の計算量で行うことができる。
+本節では $K \leq 2$ の場合の操作について説明する。
+
 \subsubsection{$\mathrm{INSERT}(x)$}
+
+\noindent [1] $\min = \mathrm{NIL}$ のとき
+
+$\min, \max$ を $x$ で置き換え、終了する。
+
+\noindent [2] $\min = x$ のとき
+
+既に $x \in S$ であるので、終了する。
+
+\noindent [3] $\min \neq \mathrm{NIL}$ かつ $\min \neq x$ のとき
+
+まず、$x < \min$ ならば $x$ と $\min$ の値を交換する。
+
+次に $\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{INSERT}(\mathrm{low}(x))$ を呼び出す。
+呼び出す前の段階で $\mathrm{cluster}_{\mathrm{high}(x)}$ が管理する集合が空だったならば、
+$\mathrm{summary}$ に対して $\mathrm{INSERT}(\mathrm{high}(x))$ を呼び出す。
+
+最後に、$\max < x$ ならば $\max$ を $x$ で置き換える。
 
 \subsubsection{$\mathrm{DELETE}(x)$}
 
+\noindent [1] $\min = \mathrm{NIL}$ または $x < \min$ または $\max < x$ のとき
+
+$x \notin S$ であるので、終了する。
+
+\noindent [2] $\min = \max = x$ のとき
+
+$\min, \max$ を $\mathrm{NIL}$ で置き換え、終了する。
+
+\noindent [3] $\min = x < \max$ のとき
+
+$\mathrm{summary}$ の $\min$ を $i$ とおき、$\mathrm{cluster}_i$ の $\min$ を $x'$ とおく。
+$\min$ を $i \times U_{\mathrm{low}} + x'$ で置き換え、$\mathrm{cluster}_i$ に対して $\mathrm{DELETE}(x')$ を呼び出す。
+これにより $\mathrm{cluster}_i$ が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}(i)$ を呼び出す。
+
+\noindent [4] $\min < x = \max$ のとき
+
+$\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{DELETE}(\mathrm{low}(x))$ を呼び出す。
+これにより $\mathrm{cluster}_{\mathrm{high}(x)}$ が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}({\mathrm{high}(x)})$ を呼び出す。
+
+次に、$\mathrm{summary}$ が空になったならば、$\max$ を $\min$ で置き換える。
+そうでなければ、$\mathrm{summary}$ の $\max$ を $i$、$\mathrm{cluster}_i$ の $\max$ を $x'$ とおいて、
+$\max$ を $i \times U_{\mathrm{low}} + x'$ で置き換える。
+
+\noindent [5] $\min < x < \max$ のとき
+
+$\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{DELETE}(\mathrm{low}(x))$ を呼び出す。
+これにより $\mathrm{cluster}_{\mathrm{high}(x)}$ が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}({\mathrm{high}(x)})$ を呼び出す。
+
 \subsubsection{$\mathrm{MEMBER}(x)$}
+
+\noindent [1] $\min = \mathrm{NIL}$ または $x < \min$ または $\max < x$ のとき
+
+$x \notin S$ と報告する。
+
+\noindent [2] $\min = x$ または $\max = x$ のとき
+
+$x \in S$ と報告する。
+
+\noindent [3] $\min < x < \max$ のとき
+
+$\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{MEMBER}(\mathrm{low}(x))$ を呼び出した結果を報告する。
 
 \subsubsection{$\mathrm{PREDECESSOR}(x)$}
 
+\noindent [1] $\min = \mathrm{NIL}$ または $x < \min$ のとき
+
+$\mathrm{NIL}$ を返す。
+
+\noindent [2] $\max \leq x$ のとき
+
+$\max$ を返す。
+
+\noindent [3] $\min \leq x < \max$ のとき
+
+$\mathrm{cluster}_{\mathrm{high}(x)}$ の $\min$ が $\mathrm{low}(x)$ 以下ならば、
+$\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{PREDECESSOR}(\mathrm{low}(x))$ を呼び出した結果 $x'$ とおいて、
+$\mathrm{high}(x) \times U_{\mathrm{low}} + x'$ を返す。
+
+そうでないとき、$\mathrm{summary}$ に対して $\mathrm{PREDECESSOR}(\mathrm{high}(x) - 1)$ を呼び出した結果を $i$ とおく。
+$i = \mathrm{NIL}$ ならば $\min$ を返し、$i \neq \mathrm{NIL}$ ならば $\mathrm{cluster}_i$ の $\max$ を $x'$ とおいて、
+$i \times U_{\mathrm{low}} + x'$ を返す。
+
 \subsubsection{$\mathrm{SUCCESSOR}(x)$}
+
+\noindent [1] $\max = \mathrm{NIL}$ または $\max < x$ のとき
+
+$\mathrm{NIL}$ を返す。
+
+\noindent [2] $x \leq \min$ のとき
+
+$\min$ を返す。
+
+\noindent [3] $\min < x \leq \max$ のとき
+
+$\mathrm{cluster}_{\mathrm{high}(x)}$ の $\max$ が $\mathrm{low}(x)$ 以上ならば、
+$\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{SUCCESSOR}(\mathrm{low}(x))$ を呼び出した結果 $x'$ とおいて、
+$\mathrm{high}(x) \times U_{\mathrm{low}} + x'$ を返す。
+
+そうでないとき、$\mathrm{summary}$ に対して $\mathrm{SUCCESSOR}(\mathrm{high}(x) + 1)$ を呼び出した結果を $i$ とおいて、
+$i \times U_{\mathrm{low}} + x'$ を返す。
+
+\subsection{計算量解析}
+
+\subsubsection{時間計算量}
+
+前述した関数において、$2$ つ以上の関数を呼び出して再帰を行う場合がある。
+しかし、管理している集合の要素数が $1$ 以下のときに $O(1)$ で処理を行うことができることに注目し、
+これらを除外すると、高々 $1$ つの関数しか呼び出さないことがわかる。
+
+よって、時間計算量は再帰の深さにのみ依存する。
+$\mathrm{vEB}(U)$ が管理する vEB tree の普遍集合サイズは $2^{\left\lceil \frac{K}{2} \right\rceil}$ 以下なので、再帰の深さは以下の値で上から抑えられる。
+
+\begin{itemize}
+  \item $K$ を $\left\lceil \frac{K}{2} \right\rceil$ で置き換えることを繰り返すとき、$K$ が $1$ 以下になるまでに必要な置き換えの回数。
+\end{itemize}
+
+$K \geq 2$ ならば $\left\lceil \frac{K}{2} \right\rceil \leq \frac{2K}{3}$ であるから、
+この値は $\log_{\frac{3}{2}}{K}$ 以下である。これと $K = \log_2{U}$ から、
+再帰の深さは $O(\log \log U)$ であることがわかる。
+以上から、vEB tree の各種操作にかかる時間計算量は $O(\log \log U)$ である。
+
+\subsubsection{空間計算量}
+
+全ての $x \in S$ に対し、$\min = x$ となるような vEB tree がただ一つ存在するため、
+空でない集合を管理している vEB tree は $|S|$ 個である。
+よって、$\mathrm{cluster}$ を管理するのにハッシュテーブルなどの連想配列を用いることで、
+空間計算量を $O(|S|)$ にすることができる。しかし、理論的な時間計算量は $O(\log \log U)$ と変わらないが
+実用上のパフォーマンスは落ちてしまうため、本稿では空間計算量の改善を行わず、$\Theta(U)$ のものを実装する。
 
 \end{document}
