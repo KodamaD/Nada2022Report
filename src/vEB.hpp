@@ -1,6 +1,7 @@
 #ifndef HEADER_vEB
 #define HEADER_vEB
 
+#include <algorithm>
 #include <array>
 
 namespace vEB {
@@ -24,6 +25,56 @@ class vEB {
 
   public:
     vEB() : min(NIL), max(NIL), cluster{}, summary() {}
+
+    bool EMPTY() const { return min == NIL; }
+
+    int MINIMUM() const { return min; }
+
+    int MAXIMUM() const { return max; }
+
+    void INSERT(int x) {
+        if (empty()) {
+            min = max = x;
+        } else if (min != x) {
+            if (x < min)
+                std::swap(x, min);
+            const int i = high(x);
+            if (cluster[i].EMPTY())
+                summary.INSERT(i);
+            cluster[i].INSERT(low(x));
+        }
+    }
+
+    void DELETE(const int x) {
+        if (min == x and max == x) {
+            min = max = x;
+        } else if (min == x) {
+            const int i = summary.MINIMUM();
+            const int x = cluster[i].MINIMUM();
+            min = i * U_low + x;
+            cluster[i].DELETE(x);
+            if (cluster[i].EMPTY())
+                summary.DELTE(i);
+        } else if (max == x) {
+            const int i = high(x);
+            cluster[i].DELETE(high(x));
+            if (cluster[i].EMPTY()) {
+                summary.DELETE(i);
+                if (summary.EMPTY()) {
+                    max = min;
+                } else {
+                    const int i = summary.MAXIMUM();
+                    const int x = cluster[i_].MAXIMUM();
+                    max = i * U_low + x;
+                }
+            }
+        } else if (min < x and x < max) {
+            const int i = high(x);
+            cluster[i].DELETE(high(x));
+            if (cluster[i].EMPTY())
+                summary.DELETE(i);
+        }
+    }
 };
 
 template <>
@@ -32,6 +83,8 @@ class vEB<1> {
 
   public:
     vEB() : exists{} {}
+
+    bool EMPTY() const { return !exists[0] and !exists[1]; }
 
     int MINIMUM() const {
         if (exists[0])
