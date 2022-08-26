@@ -26,7 +26,7 @@
 プログラミング言語 C++ には、全順序集合を効率的に管理するためのデータ構造として、
 標準ライブラリに \code{std::set} が実装されている。
 \code{std::set} の各種操作にかかる時間計算量は、要素数を $N$ として $\Theta (\log N)$ だが、
-管理する集合があらかじめ上界の与えられた非負整数の集合ならば、van Emde Boas tree（以下、vEB tree と略記する）と呼ばれるデータ構造を用いてより高速に操作を行うことができる。
+管理する集合があらかじめ上界の与えられた非負整数の集合ならば、van Emde Boas tree（以下、vEB tree と略記する）と呼ばれるデータ構造を用いてより高速に操作を行うことができる \cite{AlgorithmIntroduction}。
 本稿では、vEB tree を実装し、\code{std::set} と性能を比較する。
 
 \section{導入}
@@ -70,7 +70,7 @@
 \subsection{集合に対する制約}
 
 vEB tree を適用するため、ある自然数 $U$ が存在して、$S$ は $\{0, 1, \dots, U-1\}$ の部分集合であると仮定する。
-この $U$ を\textbf{普遍集合サイズ}と呼ぶ。
+この $U$ を\textbf{普遍集合サイズ}と呼ぶ \cite{AlgorithmIntroduction}。
 vEB tree の計算量は $U$ に依存する。
 
 \section{\code{std::set} の仕組み}
@@ -78,7 +78,7 @@ vEB tree の計算量は $U$ に依存する。
 \subsection{二分木}
 
 \textbf{二分木}とは、根付き木であって、全ての頂点が高々 $2$ つの子を持つものである。
-$2$ つの子はそれぞれ\textbf{左の子}、\textbf{右の子}と呼ばれる。
+$2$ つの子はそれぞれ\textbf{左の子}、\textbf{右の子}と呼ばれる \cite{Data}。
 頂点がただ $1$ つの子を持つ場合、左の子、右の子のうちいずれか一方の子を持つ。
 
 \subsection{二分探索木}
@@ -87,16 +87,16 @@ $2$ つの子はそれぞれ\textbf{左の子}、\textbf{右の子}と呼ばれ�
 全ての頂点 $n$ について以下の条件がいずれも成り立つものである。
 
 \begin{itemize}
-  \item $n$ の左の子が存在するならば、その値は $n$ の値以下である。
-  \item $n$ の右の子が存在するならば、その値は $n$ の値以上である。
+  \item $n$ が左の子を持つならば、その部分木に含まれる頂点の値は $n$ の値以下である。
+  \item $n$ の右の子を持つならば、その部分木に含まれる頂点の値は $n$ の値以上である。
 \end{itemize}
 
 \subsection{平衡二分探索木}
 
-二分探索木は、頂点数を $N$ とおくと、深さが最大で $\Theta(N)$ になる。
+二分探索木は、頂点数を $N$ とおくと、深さが最大で $\Theta(N)$ になる \cite{Data}。
 二分探索木の条件を保ったまま、深さを小さく維持しようとするのが\textbf{平衡二分探索木}である。
 
-\code{std::set} は平衡二分探索木を用いて実装されている。
+\code{std::set} は通常、平衡二分探索木の一種である赤黒木を用いて実装されている \cite{CppReference}。
 \code{std::set} の最悪時間計算量は、集合の要素数を $N$ として $\Theta(\log N)$ である。
 また、空間計算量は $\Theta(N)$ である。
 
@@ -136,7 +136,7 @@ $\mathrm{summary}$ は $i \in \{0, \dots, U_{\mathrm{high}} - 1\}$ かつ $\math
 \subsection{各種操作の実現}
 
 前節で述べた通り、$K \leq 1$ の場合は全ての操作を $O(1)$ の計算量で行うことができる。
-本節では $K \leq 2$ の場合の操作について説明する。
+本節では $K \geq 2$ の場合の操作について説明する。
 
 \subsubsection{$\mathrm{INSERT}(x)$}
 
@@ -271,7 +271,7 @@ $K \geq 2$ ならば $\left\lceil \frac{K}{2} \right\rceil \leq \frac{2K}{3}$ �
 
 \section{計測}
 
-Library Checker というサイトでテストケースが用意されていたため、そちらを利用する。
+Library Checker というサイトでテストケースが用意されているため、そちらを利用する。
 \code{std::set} を用いたコード、vEB tree を用いたコード、入出力のみを行うコードを提出した。
 以下に URL を記載する。
 
@@ -281,8 +281,36 @@ Library Checker というサイトでテストケースが用意されていた�
   \item[入出力のみ] \url{https://judge.yosupo.jp/submission/101636}
 \end{description}
 
-
+実行結果は \url{https://github.com/KodamaD/Nada2022Report/blob/main/docs/data.md} にまとめた。
+入出力にかかる時間を除いた実行時間を比較すると、
+$|S|$ が大きいテストケースでは vEB tree が約 $4$ 倍から $10$ 倍高速であるのに対し、
+$|S|$ が小さいテストケースでは \code{std::set} の方が高速であった。
+原因としては、vEB tree の構築にかかる時間が長いことが考えられる。
+vEB tree は $|S|$ ではなく $U$ に計算量が依存するので、集合に対する操作がほとんどないテストケースにおいても
+構築に約 $133$ ミリ秒を要している。
 
 \section{さらなる高速化}
+
+これまでは $K \leq 1$ の場合のみに長さ $U$ の配列を用いて集合を管理していたが、
+これを $K \leq 6$ の場合に拡張し、配列ではなく $64$ bit 整数を用いて管理することで高速化を図る。
+bit 演算と GCC の組み込み関数を用いて各種操作を高速に実現することができる。
+
+この高速化を施したコードは \url{https://judge.yosupo.jp/submission/101582} である。
+実行結果は前節に記載した表にまとめた。高速化を施す前のコードと比較すると、約 $2.5$ 倍から $4$ 倍高速になっていることがわかる。
+$|S|$ が大きいテストケースでは、\code{std::set} の約 $10$ 倍から $50$ 倍ほど高速である。
+依然として $|S|$ が小さいテストケースでは \code{std::set} の方が高速だが、構築にかかる時間を $33$ ミリ秒に落とすことに成功した。
+\section{まとめ}
+
+vEB tree を実装し、\code{std::set} と性能を比較した。$|S|$ が大きいテストケースでは vEB tree が非常に高速であるのに対し、
+$|S|$ が小さいテストケースでは vEB tree の構築にかかる時間がボトルネックになり、\code{std::set} の方が高速であった。
+
+vEB tree と同等の計算量を実現するデータ構造として、Y-Fast Trie と呼ばれるものが存在する \cite{Data}。
+今後はこのようなデータ構造を実装し、vEB tree や \code{std::set} との性能を比較したい。
+
+\begin{thebibliography}{9}
+  \bibitem{AlgorithmIntroduction} Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein (著)、浅野哲夫・岩野和生・梅尾博司・山下雅文 (訳)『アルゴリズムイントロダクション』第 $3$ 版 近代科学社 $2013$ 年
+  \bibitem{Data} Pat Morin（著）、堀江慧・陣内佑・田中康隆（訳）『みんなのデータ構造』ラムダノート株式会社 2018 年
+  \bibitem{CppReference} cppreference.com ``std::set''  \\ (\url{https://en.cppreference.com/w/cpp/container/set})
+\end{thebibliography}
 
 \end{document}
