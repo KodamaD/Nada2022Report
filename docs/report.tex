@@ -172,21 +172,21 @@ $\min, \max$ を $\mathrm{NIL}$ で置き換え、終了する。
 
 $\mathrm{summary}$ の $\min$ を $i$ とおき、$\mathrm{cluster}_i$ の $\min$ を $x'$ とおく。
 $\min$ を $i \times U_{\mathrm{low}} + x'$ で置き換え、$\mathrm{cluster}_i$ に対して $\mathrm{DELETE}(x')$ を呼び出す。
-これにより $\mathrm{cluster}_i$ が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}(i)$ を呼び出す。
+これにより $\mathrm{cluster}_i$ が管理する集合が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}(i)$ を呼び出す。
 
 \noindent [4] $\min < x = \max$ のとき
 
 $\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{DELETE}(\mathrm{low}(x))$ を呼び出す。
-これにより $\mathrm{cluster}_{\mathrm{high}(x)}$ が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}({\mathrm{high}(x)})$ を呼び出す。
+これにより $\mathrm{cluster}_{\mathrm{high}(x)}$ が管理する集合が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}({\mathrm{high}(x)})$ を呼び出す。
 
-次に、$\mathrm{summary}$ が空になったならば、$\max$ を $\min$ で置き換える。
+次に、$\mathrm{summary}$ が管理する集合が空になったならば、$\max$ を $\min$ で置き換える。
 そうでなければ、$\mathrm{summary}$ の $\max$ を $i$、$\mathrm{cluster}_i$ の $\max$ を $x'$ とおいて、
 $\max$ を $i \times U_{\mathrm{low}} + x'$ で置き換える。
 
 \noindent [5] $\min < x < \max$ のとき
 
 $\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{DELETE}(\mathrm{low}(x))$ を呼び出す。
-これにより $\mathrm{cluster}_{\mathrm{high}(x)}$ が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}({\mathrm{high}(x)})$ を呼び出す。
+これにより $\mathrm{cluster}_{\mathrm{high}(x)}$ が管理する集合が空になったならば、$\mathrm{summary}$ に対して $\mathrm{DELETE}({\mathrm{high}(x)})$ を呼び出す。
 
 \subsubsection{$\mathrm{MEMBER}(x)$}
 
@@ -238,7 +238,7 @@ $\mathrm{cluster}_{\mathrm{high}(x)}$ の $\max$ が $\mathrm{low}(x)$ 以上な
 $\mathrm{cluster}_{\mathrm{high}(x)}$ に対して $\mathrm{SUCCESSOR}(\mathrm{low}(x))$ を呼び出した結果 $x'$ とおいて、
 $\mathrm{high}(x) \times U_{\mathrm{low}} + x'$ を返す。
 
-そうでないとき、$\mathrm{summary}$ に対して $\mathrm{SUCCESSOR}(\mathrm{high}(x) + 1)$ を呼び出した結果を $i$ とおいて、
+そうでないとき、$\mathrm{summary}$ に対して $\mathrm{SUCCESSOR}(\mathrm{high}(x) + 1)$ を呼び出した結果を $i$、$\mathrm{cluster}_i$ の $\min$ を $x'$ とおいて、
 $i \times U_{\mathrm{low}} + x'$ を返す。
 
 \subsection{計算量解析}
@@ -268,5 +268,21 @@ $K \geq 2$ ならば $\left\lceil \frac{K}{2} \right\rceil \leq \frac{2K}{3}$ �
 よって、$\mathrm{cluster}$ を管理するのにハッシュテーブルなどの連想配列を用いることで、
 空間計算量を $O(|S|)$ にすることができる。しかし、理論的な時間計算量は $O(\log \log U)$ と変わらないが
 実用上のパフォーマンスは落ちてしまうため、本稿では空間計算量の改善を行わず、$\Theta(U)$ のものを実装する。
+
+\section{計測}
+
+Library Checker というサイトでテストケースが用意されていたため、そちらを利用する。
+\code{std::set} を用いたコード、vEB tree を用いたコード、入出力のみを行うコードを提出した。
+以下に URL を記載する。
+
+\begin{description}
+  \item[\code{std::set}] \url{https://judge.yosupo.jp/submission/101567}
+  \item[vEB tree] \url{https://judge.yosupo.jp/submission/101579}
+  \item[入出力のみ] \url{https://judge.yosupo.jp/submission/101636}
+\end{description}
+
+
+
+\section{さらなる高速化}
 
 \end{document}
